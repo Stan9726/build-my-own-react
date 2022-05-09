@@ -1,0 +1,11 @@
+{
+  "name": "build-my-own-react",
+  "version": "0.1.0",
+  "description": "My own React, completed through learning pomber's BuildYourOwnReact posts.",
+  "main": "MyReact.js",
+  "author": "Stan <Stan9726@users.noreply.github.com>",
+  "license": "MIT",
+  "keywords": [
+    "react"
+  ]
+}
