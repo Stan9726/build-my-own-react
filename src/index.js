@@ -20,22 +20,29 @@ function createTextElement(text) {
   }
 }
 
-function render(element, container) {
+function createDom(fiber) {
   const dom =
-    element.type === 'TEXT_ELEMENT'
+    fiber.type === 'TEXT_ELEMENT'
       ? document.createTextNode('')
-      : document.createElement(element.type)
+      : document.createElement(fiber.type)
 
   const isProperty = key => key !== 'children'
-  Object.keys(element.props)
+  Object.keys(fiber.props)
     .filter(isProperty)
     .forEach(name => {
-      dom[name] = element.props[name]
+      dom[name] = fiber.props[name]
     })
 
-  element.props.children.forEach(child => render(child, dom))
+  return dom
+}
 
-  container.appendChild(dom)
+function render(element, container) {
+  nextUnitOfWork = {
+    dom: container,
+    props: {
+      children: [element]
+    }
+  }
 }
 
 let nextUnitOfWork = null
@@ -54,8 +61,51 @@ function workLoop(deadline) {
 // https://developer.mozilla.org/zh-CN/docs/Web/API/Window/requestIdleCallback
 requestIdleCallback(workLoop)
 
-function performUnitOfWork(nextUnitOfWork) {
-  // TODO
+function performUnitOfWork(fiber) {
+  if (!fiber.dom) {
+    fiber.dom = createDom(fiber)
+  }
+
+  if (fiber.parent) {
+    fiber.parent.dom.appendChild(fiber.dom)
+  }
+
+  const elements = fiber.props.children
+  let index = 0
+  let prevSibling = null
+
+  while (index < elements.length) {
+    const element = elements[index]
+
+    const newFiber = {
+      type: element.type,
+      props: element.props,
+      parent: fiber,
+      dom: null
+    }
+
+    if (index === 0) {
+      fiber.child = newFiber
+    } else {
+      prevSibling.sibling = newFiber
+    }
+
+    prevSibling = newFiber
+    index++
+  }
+
+  if (fiber.child) {
+    return fiber.child
+  }
+
+  let nextFiber = fiber
+  while (nextFiber) {
+    if (nextFiber.sibling) {
+      return nextFiber.sibling
+    }
+
+    nextFiber = nextFiber.parent
+  }
 }
 
 const MyReact = {
@@ -66,8 +116,11 @@ const MyReact = {
 /** @jsx MyReact.createElement */
 const element = (
   <div id="foo">
-    <h1>Hello World</h1>
-    <h2>MyReact</h2>
+    <h1>
+      <p>Hello World</p>
+      <span>MyReact</span>
+    </h1>
+    <h2>from CoderStan</h2>
   </div>
 )
 
